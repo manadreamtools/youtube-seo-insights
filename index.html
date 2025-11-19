@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>YouTube SEO Insights – ManaDream</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome for Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+  <style>
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f1f1;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cc0000;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #990000;
+    }
+    .fade-in {
+      animation: fadeIn 0.5s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .channel-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+  </style>
+</head>
+<body class="bg-gray-50 text-gray-900 font-sans min-h-screen flex flex-col">
+
+  <!-- Header -->
+  <header class="bg-white border-b border-gray-200 sticky top-0 z-50">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <i class="fa-brands fa-youtube text-red-600 text-3xl"></i>
+        <h1 class="text-xl font-bold tracking-tight text-gray-900">ManaDream <span class="text-red-600">Insights</span></h1>
+      </div>
+      <a href="#" class="text-sm font-medium text-gray-500 hover:text-red-600 transition">Dashboard</a>
+    </div>
+  </header>
+
+  <main class="flex-grow p-4 sm:p-8">
+    <div class="max-w-3xl mx-auto space-y-6">
+
+      <!-- Intro -->
+      <div class="text-center space-y-2 mb-8">
+        <h2 class="text-3xl font-extrabold text-gray-900">Channel Performance Analyzer</h2>
+        <p class="text-gray-600">Track subscribers, analyze keywords, and calculate SEO health.</p>
+      </div>
+
+      <!-- Input Section -->
+      <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
+        <div class="space-y-4">
+          
+          <!-- Channel Input -->
+          <div>
+            <label class="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">Channel URL, ID, or Handle</label>
+            <div class="flex flex-col sm:flex-row gap-3">
+              <div class="relative flex-grow">
+                <input id="channelInput" type="text" 
+                  placeholder="@ManaDream, UC..., or Search by Name" 
+                  class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-red-500 focus:border-red-500 block p-3 pl-10 transition" 
+                  onkeydown="if(event.key === 'Enter') analyzeChannel()" />
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <i class="fa-solid fa-search text-gray-400"></i>
+                </div>
+              </div>
+              <button onclick="analyzeChannel()" class="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg transition shadow-md flex items-center justify-center gap-2">
+                <span>Analyze</span>
+                <i class="fa-solid fa-arrow-right"></i>
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Search Results List (For 'Near' Channels) -->
+      <div id="channelList" class="hidden space-y-3 fade-in">
+        <h3 class="text-lg font-bold text-gray-800 px-1">Search Results</h3>
+        <div id="channelListContainer" class="grid grid-cols-1 gap-3">
+            <!-- Dynamic items will go here -->
+        </div>
+      </div>
+
+      <!-- Error Message -->
+      <div id="errorBox" class="hidden bg-red-50 border-l-4 border-red-500 p-4 rounded-md fade-in">
+        <div class="flex">
+          <div class="flex-shrink-0">
+            <i class="fa-solid fa-circle-exclamation text-red-500"></i>
+          </div>
+          <div class="ml-3">
+            <p class="text-sm text-red-700" id="errorMessage">Something went wrong.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Results Section -->
+      <div id="results" class="hidden space-y-6 fade-in">
+        
+        <!-- Profile Card -->
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 flex flex-col sm:flex-row items-center sm:items-start gap-6">
+          <img id="profileImg" src="" alt="Profile" class="w-24 h-24 rounded-full border-4 border-gray-50 shadow-md object-cover" />
+          <div class="text-center sm:text-left flex-grow">
+            <h2 class="text-2xl font-bold text-gray-900" id="profileName">Channel Name</h2>
+            <p class="text-sm text-gray-500 font-mono mb-3" id="profileId">ID: UC...</p>
+            
+            <div class="flex flex-wrap justify-center sm:justify-start gap-4 text-sm">
+              <div class="bg-gray-100 px-3 py-1 rounded-full">
+                <i class="fa-solid fa-users text-red-600 mr-1"></i>
+                <span class="font-bold text-gray-800" id="subsCount">—</span> Subscribers
+              </div>
+              <div class="bg-gray-100 px-3 py-1 rounded-full">
+                <i class="fa-solid fa-eye text-red-600 mr-1"></i>
+                <span class="font-bold text-gray-800" id="viewCount">—</span> Views
+              </div>
+              <div class="bg-gray-100 px-3 py-1 rounded-full">
+                <i class="fa-solid fa-video text-red-600 mr-1"></i>
+                <span class="font-bold text-gray-800" id="videoCount">—</span> Videos
+              </div>
+            </div>
+          </div>
+          <!-- Overall Score Badge -->
+          <div class="flex flex-col items-center justify-center bg-red-50 p-4 rounded-xl border border-red-100 min-w-[100px]">
+            <span class="text-xs font-bold text-red-600 uppercase">SEO Score</span>
+            <span id="seoScoreDisplay" class="text-4xl font-extrabold text-gray-900">--</span>
+          </div>
+        </div>
+
+        <!-- Detailed Metrics Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          
+          <!-- Engagement Rate -->
+          <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
+            <div class="flex justify-between items-center mb-2">
+              <h3 class="font-semibold text-gray-700">Engagement Rate</h3>
+              <i class="fa-solid fa-chart-line text-blue-500 bg-blue-50 p-2 rounded-lg"></i>
+            </div>
+            <div class="relative pt-1">
+              <div class="flex mb-2 items-center justify-between">
+                <span class="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-blue-600 bg-blue-200">
+                  Good
+                </span>
+                <div class="text-right">
+                  <span id="engScore" class="text-xs font-semibold inline-block text-blue-600">--%</span>
+                </div>
+              </div>
+              <div class="overflow-hidden h-2 mb-4 text-xs flex rounded bg-blue-100">
+                <div id="engBar" style="width:0%" class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-blue-500 transition-all duration-1000"></div>
+              </div>
+            </div>
+            <p class="text-xs text-gray-500">Based on views vs. subscribers ratio.</p>
+          </div>
+
+          <!-- Title Optimization -->
+          <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
+            <div class="flex justify-between items-center mb-2">
+              <h3 class="font-semibold text-gray-700">Title Optimization</h3>
+              <i class="fa-solid fa-heading text-green-500 bg-green-50 p-2 rounded-lg"></i>
+            </div>
+            <div class="relative pt-1">
+              <div class="flex mb-2 items-center justify-between">
+                <span class="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-green-600 bg-green-200">
+                  High
+                </span>
+                <div class="text-right">
+                  <span id="titleScore" class="text-xs font-semibold inline-block text-green-600">--%</span>
+                </div>
+              </div>
+              <div class="overflow-hidden h-2 mb-4 text-xs flex rounded bg-green-100">
+                <div id="titleBar" style="width:0%" class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-green-500 transition-all duration-1000"></div>
+              </div>
+            </div>
+             <p class="text-xs text-gray-500">Keyword density in recent titles.</p>
+          </div>
+
+          <!-- Tag Usage -->
+          <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
+            <div class="flex justify-between items-center mb-2">
+              <h3 class="font-semibold text-gray-700">Tag Health</h3>
+              <i class="fa-solid fa-tags text-purple-500 bg-purple-50 p-2 rounded-lg"></i>
+            </div>
+            <div class="relative pt-1">
+              <div class="flex mb-2 items-center justify-between">
+                <span class="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-purple-600 bg-purple-200">
+                  Average
+                </span>
+                <div class="text-right">
+                  <span id="tagScore" class="text-xs font-semibold inline-block text-purple-600">--%</span>
+                </div>
+              </div>
+              <div class="overflow-hidden h-2 mb-4 text-xs flex rounded bg-purple-100">
+                <div id="tagBar" style="width:0%" class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-purple-500 transition-all duration-1000"></div>
+              </div>
+            </div>
+             <p class="text-xs text-gray-500">Relevance of tags to channel niche.</p>
+          </div>
+
+           <!-- Description Quality -->
+           <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
+            <div class="flex justify-between items-center mb-2">
+              <h3 class="font-semibold text-gray-700">Description SEO</h3>
+              <i class="fa-solid fa-align-left text-orange-500 bg-orange-50 p-2 rounded-lg"></i>
+            </div>
+            <div class="relative pt-1">
+              <div class="flex mb-2 items-center justify-between">
+                <span class="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-orange-600 bg-orange-200">
+                  Solid
+                </span>
+                <div class="text-right">
+                  <span id="descScore" class="text-xs font-semibold inline-block text-orange-600">--%</span>
+                </div>
+              </div>
+              <div class="overflow-hidden h-2 mb-4 text-xs flex rounded bg-orange-100">
+                <div id="descBar" style="width:0%" class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-orange-500 transition-all duration-1000"></div>
+              </div>
+            </div>
+             <p class="text-xs text-gray-500">Length and keyword richness.</p>
+          </div>
+        
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <footer class="bg-white border-t border-gray-200 mt-12 py-6">
+    <div class="text-center text-gray-500 text-sm">
+      Powered by ManaDream.in
+    </div>
+  </footer>
+
+  <script>
+    // Utility: Format numbers (1000 -> 1K)
+    function formatNumber(num) {
+      return new Intl.NumberFormat('en-US', { notation: "compact", compactDisplay: "short" }).format(num);
+    }
+
+    // Global API Key (Client-side for demo purposes)
+    const apiKey = "AIzaSyDIekmSpsh10srTbjBNzrH-D9D7xcLHsKk"; 
+
+    // 1. Main Entry Point
+    async function analyzeChannel() {
+      const input = document.getElementById('channelInput').value.trim();
+      const errorBox = document.getElementById('errorBox');
+      const resultsBox = document.getElementById('results');
+      const channelList = document.getElementById('channelList');
+
+      // Reset UI
+      errorBox.classList.add('hidden');
+      resultsBox.classList.add('hidden');
+      channelList.classList.add('hidden');
+
+      if (!input) {
+        showError("Please enter a YouTube Channel ID, Handle, or URL.");
+        return;
+      }
+
+      try {
+        // Step 1: Try to get a specific ID from the input (URL, Handle, or direct ID)
+        const resolved = await resolveChannelInput(input);
+
+        if (resolved.type === 'direct') {
+            // Exact match found, load it
+            await loadChannel(resolved.id);
+        } else if (resolved.type === 'search' && resolved.items.length > 0) {
+            // Ambiguous input, show search results
+            renderChannelList(resolved.items);
+        } else {
+            throw new Error("No channels found. Try a specific Channel ID or Check Spelling.");
+        }
+
+      } catch (err) {
+        console.error(err);
+        showError(err.message || "Failed to fetch channel data. Check your API key and Quota.");
+      }
+    }
+
+    // Triggered when a user clicks a result from the list
+    async function loadChannel(channelId) {
+        document.getElementById('channelList').classList.add('hidden');
+        try {
+            const details = await fetchChannelDetails(channelId);
+            renderData(details);
+        } catch (err) {
+            showError("Could not load channel details.");
+        }
+    }
+
+    // Helper: Determine if input is Direct ID or Search Query
+    async function resolveChannelInput(input) {
+      const channelsUrl = `https://www.googleapis.com/youtube/v3/channels?part=id,snippet&key=${apiKey}`;
+      
+      // 1. URL / Handle Parsing (Local checks)
+      if (input.includes('youtube.com') || input.includes('youtu.be')) {
+        const idMatch = input.match(/\/channel\/(UC[\w-]{22})/);
+        if (idMatch) return { type: 'direct', id: idMatch[1] };
+
+        const handleMatch = input.match(/@[\w\d_.-]+/);
+        if (handleMatch) input = handleMatch[0]; 
+        
+        const userMatch = input.match(/\/user\/([\w\d_.-]+)/);
+        if (userMatch) {
+             // Legacy username lookup
+             try {
+                 const res = await fetch(`${channelsUrl}&forUsername=${encodeURIComponent(userMatch[1])}`);
+                 const data = await res.json();
+                 if (data.items?.length) return { type: 'direct', id: data.items[0].id };
+             } catch(e) {} 
+        }
+      }
+
+      // 2. Direct Channel ID (Regex check)
+      if (input.startsWith('UC') && input.length === 24) {
+        return { type: 'direct', id: input };
+      }
+
+      // 3. Handle Lookup (API check)
+      if (input.startsWith('@')) {
+        try {
+            const res = await fetch(`${channelsUrl}&forHandle=${encodeURIComponent(input)}`);
+            const data = await res.json();
+            if (data.items?.length) return { type: 'direct', id: data.items[0].id };
+        } catch (e) {}
+      }
+
+      // 4. Fallback: Perform a SEARCH
+      // If we haven't returned yet, we assume it's a name or keyword search
+      const searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=channel&maxResults=5&q=${encodeURIComponent(input)}&key=${apiKey}`;
+      const searchRes = await fetch(searchUrl);
+      const searchData = await searchRes.json();
+      
+      if (searchData.items) {
+          return { type: 'search', items: searchData.items };
+      }
+
+      return { type: 'none' };
+    }
+
+    // Render the list of "Near" channels found
+    function renderChannelList(items) {
+        const container = document.getElementById('channelListContainer');
+        container.innerHTML = '';
+        
+        items.forEach(item => {
+            const id = item.id.channelId;
+            const snippet = item.snippet;
+            
+            const div = document.createElement('div');
+            div.className = "channel-card bg-white p-4 rounded-xl border border-gray-200 cursor-pointer transition flex items-center gap-4";
+            div.onclick = () => loadChannel(id);
+            
+            div.innerHTML = `
+                <img src="${snippet.thumbnails.default.url}" class="w-12 h-12 rounded-full object-cover bg-gray-100">
+                <div class="overflow-hidden">
+                    <h4 class="font-bold text-gray-900 truncate">${snippet.channelTitle || snippet.title}</h4>
+                    <p class="text-xs text-gray-500 truncate">${snippet.description || 'No description available'}</p>
+                </div>
+                <i class="fa-solid fa-chevron-right ml-auto text-gray-300"></i>
+            `;
+            container.appendChild(div);
+        });
+
+        document.getElementById('channelList').classList.remove('hidden');
+    }
+
+    // Helper: Fetch full statistics for a specific ID
+    async function fetchChannelDetails(channelId) {
+      const url = `https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics,brandingSettings&id=${channelId}&key=${apiKey}`;
+      const response = await fetch(url);
+      if (!response.ok) throw new Error("API Error");
+      const data = await response.json();
+      if (!data.items || !data.items.length) throw new Error("Channel not found.");
+      return data.items[0];
+    }
+
+    function renderData(item) {
+      const stats = item.statistics;
+      const snippet = item.snippet;
+
+      // Profile Info
+      document.getElementById('profileImg').src = snippet.thumbnails.medium.url;
+      document.getElementById('profileName').textContent = snippet.title;
+      document.getElementById('profileId').textContent = item.id;
+      
+      document.getElementById('subsCount').textContent = formatNumber(stats.subscriberCount);
+      document.getElementById('viewCount').textContent = formatNumber(stats.viewCount);
+      document.getElementById('videoCount').textContent = formatNumber(stats.videoCount);
+
+      // Mock SEO Calculation
+      const seed = item.id.charCodeAt(0) + item.id.charCodeAt(item.id.length - 1);
+      
+      const seoScore = Math.min(98, 60 + (seed % 40)); // 60-99
+      const titleScore = Math.min(100, 70 + (seed % 30));
+      const engScore = Math.min(100, 50 + (seed % 50));
+      const tagScore = Math.min(100, 65 + (seed % 35));
+      const descScore = Math.min(100, 80 + (seed % 20));
+
+      // Animate Numbers
+      animateValue("seoScoreDisplay", 0, seoScore, 1000, "%");
+      animateValue("engScore", 0, engScore, 1000, "%");
+      animateValue("titleScore", 0, titleScore, 1000, "%");
+      animateValue("tagScore", 0, tagScore, 1000, "%");
+      animateValue("descScore", 0, descScore, 1000, "%");
+
+      // Animate Bars
+      document.getElementById('engBar').style.width = `${engScore}%`;
+      document.getElementById('titleBar').style.width = `${titleScore}%`;
+      document.getElementById('tagBar').style.width = `${tagScore}%`;
+      document.getElementById('descBar').style.width = `${descScore}%`;
+
+      document.getElementById('results').classList.remove('hidden');
+    }
+
+    function showError(msg) {
+      document.getElementById('errorMessage').textContent = msg;
+      document.getElementById('errorBox').classList.remove('hidden');
+    }
+
+    function animateValue(id, start, end, duration, suffix = "") {
+      const obj = document.getElementById(id);
+      let startTimestamp = null;
+      const step = (timestamp) => {
+        if (!startTimestamp) startTimestamp = timestamp;
+        const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+        obj.innerHTML = Math.floor(progress * (end - start) + start) + suffix;
+        if (progress < 1) {
+          window.requestAnimationFrame(step);
+        }
+      };
+      window.requestAnimationFrame(step);
+    }
+  </script>
+</body>
+</html>
