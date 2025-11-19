@@ -1,0 +1,1025 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>YouTube SEO Insights – ManaDream</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome for Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+  <style>
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f1f1;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cc0000;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #990000;
+    }
+    .fade-in {
+      animation: fadeIn 0.5s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .channel-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+    /* Tab Active State */
+    .nav-tab.active {
+      color: #dc2626;
+      border-bottom: 2px solid #dc2626;
+    }
+    .nav-tab {
+      color: #6b7280;
+      border-bottom: 2px solid transparent;
+      cursor: pointer;
+    }
+    .nav-tab:hover {
+      color: #374151;
+    }
+    /* Simple pulse animation for error feedback */
+    .animate-pulse {
+        animation: pulse 0.5s 3;
+    }
+    @keyframes pulse {
+        0%, 100% {
+            transform: scale(1);
+        }
+        50% {
+            transform: scale(1.01);
+        }
+    }
+  </style>
+</head>
+<body class="bg-gray-50 text-gray-900 font-sans min-h-screen flex flex-col">
+
+  <!-- Header -->
+  <header class="bg-white border-b border-gray-200 sticky top-0 z-50">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <i class="fa-brands fa-youtube text-red-600 text-3xl"></i>
+        <h1 class="text-xl font-bold tracking-tight text-gray-900 hidden sm:block">ManaDream <span class="text-red-600">Insights</span></h1>
+      </div>
+      
+      <!-- Navigation -->
+      <nav class="flex space-x-8 h-full">
+        <a onclick="switchView('dashboard')" id="tab-dashboard" class="nav-tab active flex items-center px-1 pt-1 text-sm font-medium transition">
+          <i class="fa-solid fa-chart-simple mr-2"></i> Dashboard
+        </a>
+        <a onclick="switchView('crm')" id="tab-crm" class="nav-tab flex items-center px-1 pt-1 text-sm font-medium transition">
+          <i class="fa-solid fa-address-book mr-2"></i> CRM
+        </a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="flex-grow p-4 sm:p-8 relative">
+    
+    <!-- VIEW: DASHBOARD -->
+    <div id="view-dashboard" class="max-w-3xl mx-auto space-y-6 fade-in">
+
+      <!-- Intro -->
+      <div class="text-center space-y-2 mb-8">
+        <h2 class="text-3xl font-extrabold text-gray-900">Channel Performance Analyzer</h2>
+        <p class="text-gray-600">Track subscribers, analyze keywords, and calculate SEO health.</p>
+      </div>
+
+      <!-- Input Section -->
+      <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
+        <div class="space-y-4">
+          <!-- Channel Input -->
+          <div>
+            <label class="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">Channel URL, ID, or Handle</label>
+            <div class="flex flex-col sm:flex-row gap-3">
+              <div class="relative flex-grow">
+                <input id="channelInput" type="text" 
+                  placeholder="@ManaDream, UC..., or Search by Name" 
+                  class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-red-500 focus:border-red-500 block p-3 pl-10 transition" 
+                  onkeydown="if(event.key === 'Enter') analyzeChannel()" />
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <i class="fa-solid fa-search text-gray-400"></i>
+                </div>
+              </div>
+              <button onclick="analyzeChannel()" class="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg transition shadow-md flex items-center justify-center gap-2">
+                <span>Analyze</span>
+                <i class="fa-solid fa-arrow-right"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Search Results List (For 'Near' Channels) -->
+      <div id="channelList" class="hidden space-y-3 fade-in">
+        <h3 class="text-lg font-bold text-gray-800 px-1">Search Results</h3>
+        <div id="channelListContainer" class="grid grid-cols-1 gap-3">
+            <!-- Dynamic items will go here -->
+        </div>
+      </div>
+
+      <!-- Error Message -->
+      <div id="errorBox" class="hidden bg-red-50 border-l-4 border-red-500 p-4 rounded-md fade-in">
+        <div class="flex">
+          <div class="flex-shrink-0">
+            <i class="fa-solid fa-circle-exclamation text-red-500"></i>
+          </div>
+          <div class="ml-3">
+            <p class="text-sm text-red-700" id="errorMessage">Something went wrong.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Results Section -->
+      <div id="results" class="hidden space-y-6 fade-in">
+        
+        <!-- Profile Card -->
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 relative overflow-hidden">
+          
+          <div class="flex flex-col sm:flex-row items-center sm:items-start gap-6">
+            <img id="profileImg" src="" alt="Profile" class="w-24 h-24 rounded-full border-4 border-gray-50 shadow-md object-cover" />
+            <div class="text-center sm:text-left flex-grow">
+              <h2 class="text-2xl font-bold text-gray-900" id="profileName">Channel Name</h2>
+              <p class="text-sm text-gray-500 font-mono mb-3" id="profileId">ID: UC...</p>
+              
+              <div class="flex flex-wrap justify-center sm:justify-start gap-4 text-sm">
+                <div class="bg-gray-100 px-3 py-1 rounded-full">
+                  <i class="fa-solid fa-users text-red-600 mr-1"></i>
+                  <span class="font-bold text-gray-800" id="subsCount">—</span> Subscribers
+                </div>
+                <div class="bg-gray-100 px-3 py-1 rounded-full">
+                  <i class="fa-solid fa-eye text-red-600 mr-1"></i>
+                  <span class="font-bold text-gray-800" id="viewCount">—</span> Views
+                </div>
+                <div class="bg-gray-100 px-3 py-1 rounded-full">
+                  <i class="fa-solid fa-video text-red-600 mr-1"></i>
+                  <span class="font-bold text-gray-800" id="videoCount">—</span> Videos
+                </div>
+              </div>
+            </div>
+            <!-- Overall Score Badge -->
+            <div class="flex flex-col items-center justify-center bg-red-50 p-4 rounded-xl border border-red-100 min-w-[100px] mt-8 sm:mt-0">
+              <span class="text-xs font-bold text-red-600 uppercase">SEO Score</span>
+              <span id="seoScoreDisplay" class="text-4xl font-extrabold text-gray-900">--</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Detailed Metrics Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          
+          <!-- Engagement Rate -->
+          <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
+            <div class="flex justify-between items-center mb-2">
+              <h3 class="font-semibold text-gray-700">Engagement Rate</h3>
+              <i class="fa-solid fa-chart-line text-blue-500 bg-blue-50 p-2 rounded-lg"></i>
+            </div>
+            <div class="relative pt-1">
+              <div class="flex mb-2 items-center justify-between">
+                <span class="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-blue-600 bg-blue-200">
+                  Good
+                </span>
+                <div class="text-right">
+                  <span id="engScore" class="text-xs font-semibold inline-block text-blue-600">--%</span>
+                </div>
+              </div>
+              <div class="overflow-hidden h-2 mb-4 text-xs flex rounded bg-blue-100">
+                <div id="engBar" style="width:0%" class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-blue-500 transition-all duration-1000"></div>
+              </div>
+            </div>
+            <p class="text-xs text-gray-500">Based on views vs. subscribers ratio.</p>
+          </div>
+
+          <!-- Title Optimization -->
+          <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
+            <div class="flex justify-between items-center mb-2">
+              <h3 class="font-semibold text-gray-700">Title Optimization</h3>
+              <i class="fa-solid fa-heading text-green-500 bg-green-50 p-2 rounded-lg"></i>
+            </div>
+            <div class="relative pt-1">
+              <div class="flex mb-2 items-center justify-between">
+                <span class="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-green-600 bg-green-200">
+                  High
+                </span>
+                <div class="text-right">
+                  <span id="titleScore" class="text-xs font-semibold inline-block text-green-600">--%</span>
+                </div>
+              </div>
+              <div class="overflow-hidden h-2 mb-4 text-xs flex rounded bg-green-100">
+                <div id="titleBar" style="width:0%" class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-green-500 transition-all duration-1000"></div>
+              </div>
+            </div>
+             <p class="text-xs text-gray-500">Keyword density in recent titles.</p>
+          </div>
+
+          <!-- Tag Usage -->
+          <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
+            <div class="flex justify-between items-center mb-2">
+              <h3 class="font-semibold text-gray-700">Tag Health</h3>
+              <i class="fa-solid fa-tags text-purple-500 bg-purple-50 p-2 rounded-lg"></i>
+            </div>
+            <div class="relative pt-1">
+              <div class="flex mb-2 items-center justify-between">
+                <span class="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-purple-600 bg-purple-200">
+                  Average
+                </span>
+                <div class="text-right">
+                  <span id="tagScore" class="text-xs font-semibold inline-block text-purple-600">--%</span>
+                </div>
+              </div>
+              <div class="overflow-hidden h-2 mb-4 text-xs flex rounded bg-purple-100">
+                <div id="tagBar" style="width:0%" class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-purple-500 transition-all duration-1000"></div>
+              </div>
+            </div>
+             <p class="text-xs text-gray-500">Relevance of tags to channel niche.</p>
+          </div>
+
+           <!-- Description Quality -->
+           <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
+            <div class="flex justify-between items-center mb-2">
+              <h3 class="font-semibold text-gray-700">Description SEO</h3>
+              <i class="fa-solid fa-align-left text-orange-500 bg-orange-50 p-2 rounded-lg"></i>
+            </div>
+            <div class="relative pt-1">
+              <div class="flex mb-2 items-center justify-between">
+                <span class="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-orange-600 bg-orange-200">
+                  Solid
+                </span>
+                <div class="text-right">
+                  <span id="descScore" class="text-xs font-semibold inline-block text-orange-600">--%</span>
+                </div>
+              </div>
+              <div class="overflow-hidden h-2 mb-4 text-xs flex rounded bg-orange-100">
+                <div id="descBar" style="width:0%" class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-orange-500 transition-all duration-1000"></div>
+              </div>
+            </div>
+             <p class="text-xs text-gray-500">Length and keyword richness.</p>
+          </div>
+        
+        </div>
+      </div>
+    </div>
+
+    <!-- VIEW: LOGIN/SIGNUP CONTAINER (MODAL) -->
+    <div id="view-auth" class="hidden max-w-md mx-auto mt-20 fade-in">
+        
+        <!-- LOGIN CARD -->
+        <div id="loginCard" class="bg-white p-8 rounded-2xl shadow-lg border border-gray-200 text-center">
+            <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-100 mb-6">
+                <i class="fa-solid fa-lock text-2xl text-red-600"></i>
+            </div>
+            <h2 class="text-2xl font-bold text-gray-900 mb-2">CRM Login</h2>
+            <p class="text-sm text-gray-500 mb-8">Please log in to manage your relationships.</p>
+            
+            <div class="space-y-4 text-left">
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Username</label>
+                    <input id="loginUser" type="text" class="w-full bg-gray-50 border border-gray-300 rounded-lg p-3 focus:ring-red-500 focus:border-red-500 transition" placeholder="Username">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Password</label>
+                    <input id="loginPass" type="password" class="w-full bg-gray-50 border border-gray-300 rounded-lg p-3 focus:ring-red-500 focus:border-red-500 transition" placeholder="Password">
+                </div>
+                <p id="loginError" class="text-red-600 text-sm hidden"><i class="fa-solid fa-circle-exclamation mr-1"></i> Invalid credentials</p>
+                
+                <button onclick="attemptLogin()" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-lg transition shadow-md">
+                    Login
+                </button>
+            </div>
+            <p class="mt-6 text-sm text-gray-500">
+                Don't have an account? 
+                <a href="#" onclick="showSignUp(event)" class="text-red-600 hover:text-red-700 font-medium">Create one</a>
+            </p>
+        </div>
+
+        <!-- SIGN UP CARD -->
+        <div id="signupCard" class="bg-white p-8 rounded-2xl shadow-lg border border-gray-200 text-center hidden">
+            <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-100 mb-6">
+                <i class="fa-solid fa-user-plus text-2xl text-green-600"></i>
+            </div>
+            <h2 class="text-2xl font-bold text-gray-900 mb-2">Create CRM Account</h2>
+            <p class="text-sm text-gray-500 mb-8">
+                Choose a unique username that must be a **@gmail.com** address.
+            </p>
+            
+            <div class="space-y-4 text-left">
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">New Username (must be @gmail.com)</label>
+                    <input id="signupUser" type="text" class="w-full bg-gray-50 border border-gray-300 rounded-lg p-3 focus:ring-red-500 focus:border-red-500 transition" placeholder="e.g., yourname@gmail.com">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Password</label>
+                    <input id="signupPass" type="password" class="w-full bg-gray-50 border border-gray-300 rounded-lg p-3 focus:ring-red-500 focus:border-red-500 transition" placeholder="Minimum 6 characters">
+                </div>
+                 <div>
+                    <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Confirm Password</label>
+                    <input id="signupConfirmPass" type="password" class="w-full bg-gray-50 border border-gray-300 rounded-lg p-3 focus:ring-red-500 focus:border-red-500 transition" placeholder="Retype password">
+                </div>
+                <p id="signupError" class="text-red-600 text-sm hidden"><i class="fa-solid fa-circle-exclamation mr-1"></i> Error message</p>
+                
+                <button onclick="attemptSignUp()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-lg transition shadow-md">
+                    Sign Up
+                </button>
+            </div>
+            <p class="mt-6 text-sm text-gray-500">
+                Already have an account? 
+                <a href="#" onclick="showLogin(event)" class="text-red-600 hover:text-red-700 font-medium">Log In</a>
+            </p>
+        </div>
+    </div>
+
+
+    <!-- VIEW: CRM -->
+    <div id="view-crm" class="hidden max-w-6xl mx-auto space-y-6 fade-in">
+        
+        <div class="flex justify-between items-center">
+            <div>
+                <h2 class="text-2xl font-bold text-gray-900">Relationship Manager</h2>
+                <p class="text-gray-600">Manage your influencers and partnerships.</p>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="logout()" class="text-sm bg-gray-100 text-gray-700 hover:bg-gray-200 px-4 py-2 rounded-lg font-medium shadow-sm transition">
+                     Logout
+                </button>
+                <button onclick="exportCRM()" class="text-sm bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 px-4 py-2 rounded-lg font-medium shadow-sm">
+                    <i class="fa-solid fa-download mr-2"></i> Export CSV
+                </button>
+            </div>
+        </div>
+
+        <!-- ANALYTICS SUMMARY -->
+        <div id="crmAnalyticsSummary" class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <!-- Total Channels -->
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200 flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-500">Total Channels</p>
+                    <p id="statTotalChannels" class="text-2xl font-bold text-gray-900">0</p>
+                </div>
+                <i class="fa-solid fa-layer-group text-3xl text-red-300"></i>
+            </div>
+            
+            <!-- Total Subscribers -->
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200 flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-500">Total Subscribers</p>
+                    <p id="statTotalSubs" class="text-2xl font-bold text-gray-900">0</p>
+                </div>
+                <i class="fa-solid fa-users text-3xl text-blue-300"></i>
+            </div>
+
+            <!-- Average SEO Score -->
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200 flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-500">Avg. SEO Score</p>
+                    <p id="statAvgSeo" class="text-2xl font-bold text-gray-900">0%</p>
+                </div>
+                <i class="fa-solid fa-chart-line text-3xl text-green-300"></i>
+            </div>
+
+            <!-- Channels Contacted -->
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200 flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-500">Channels Contacted</p>
+                    <p id="statContacted" class="text-2xl font-bold text-gray-900">0</p>
+                </div>
+                <i class="fa-solid fa-handshake text-3xl text-purple-300"></i>
+            </div>
+        </div>
+        <!-- END ANALYTICS SUMMARY -->
+
+
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Channel</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stats</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact Info & Notes</th>
+                            <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="crmTableBody" class="bg-white divide-y divide-gray-200">
+                        <!-- CRM Rows will be injected here -->
+                    </tbody>
+                </table>
+            </div>
+            <div id="crmEmptyState" class="hidden p-12 text-center">
+                <div class="text-gray-400 mb-3"><i class="fa-solid fa-address-book text-4xl"></i></div>
+                <h3 class="text-lg font-medium text-gray-900">Your CRM is empty</h3>
+                <p class="text-gray-500">Analyze a channel and it will automatically be added here.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteModal" class="fixed inset-0 bg-gray-900/50 hidden flex items-center justify-center z-[60] backdrop-blur-sm">
+        <div class="bg-white p-6 rounded-xl shadow-2xl max-w-sm w-full mx-4 transform transition-all scale-100">
+            <div class="text-center mb-6">
+                <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+                    <i class="fa-solid fa-trash-can text-red-600 text-xl"></i>
+                </div>
+                <h3 class="text-lg font-bold text-gray-900">Remove Channel?</h3>
+                <p class="text-sm text-gray-500 mt-2">Are you sure you want to remove this channel from your CRM? This action cannot be undone.</p>
+            </div>
+            <div class="flex gap-3">
+                <button onclick="closeDeleteModal()" class="flex-1 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-lg transition">
+                    Cancel
+                </button>
+                <button onclick="executeDelete()" class="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition shadow-md">
+                    Remove
+                </button>
+            </div>
+        </div>
+    </div>
+
+  </main>
+
+  <footer class="bg-white border-t border-gray-200 mt-12 py-6">
+    <div class="text-center text-gray-500 text-sm">
+      Powered by ManaDream.in
+    </div>
+  </footer>
+
+  <script>
+    // --- UTILITY ---
+    function formatNumber(num) {
+      if (typeof num === 'string') num = parseInt(num, 10);
+      return new Intl.NumberFormat('en-US', { notation: "compact", compactDisplay: "short" }).format(num);
+    }
+
+    function formatLargeNumber(num) {
+        if (typeof num === 'string') num = parseInt(num, 10);
+        return new Intl.NumberFormat('en-US').format(num);
+    }
+
+    function getStorage(key, defaultValue = '[]') {
+        const value = localStorage.getItem(key);
+        try {
+            return JSON.parse(value) || JSON.parse(defaultValue);
+        } catch (e) {
+            console.error(`Error parsing localStorage key ${key}:`, e);
+            return JSON.parse(defaultValue);
+        }
+    }
+
+    function setStorage(key, value) {
+        localStorage.setItem(key, JSON.stringify(value));
+    }
+
+    // --- USER-SPECIFIC DATA HELPERS ---
+    let currentUsername = null; 
+
+    function getUserCrmStorageKey() {
+        return `yt_crm_data_${currentUsername}`;
+    }
+
+    function loadUserCrmData() {
+        if (!currentUsername) return;
+        crmList = getStorage(getUserCrmStorageKey(), '[]');
+    }
+
+    function saveCRM() {
+        if (!currentUsername) {
+             console.error("Cannot save CRM: No user logged in.");
+             return;
+        }
+        setStorage(getUserCrmStorageKey(), crmList);
+    }
+
+    // --- STATE ---
+    const apiKey = "AIzaSyDIekmSpsh10srTbjBNzrH-D9D7xcLHsKk"; 
+    let currentView = 'dashboard';
+    let isLoggedIn = false; 
+    let currentChannelData = null; 
+    let crmList = []; 
+    let userList = getStorage('yt_crm_users', '[{"username":"admin@gmail.com","password":"admin"}]'); 
+    let deleteTargetId = null; 
+    let currentSeoScore = 0; // Temp storage for the score during analysis
+
+    // --- NAVIGATION ---
+    function switchView(viewName) {
+        currentView = viewName;
+        
+        // Toggle Nav Classes
+        document.getElementById('tab-dashboard').classList.toggle('active', viewName === 'dashboard');
+        // Keep CRM tab active if we are in login/auth view
+        document.getElementById('tab-crm').classList.toggle('active', viewName === 'crm' || viewName === 'auth');
+
+        // Hide all views first
+        document.getElementById('view-dashboard').classList.add('hidden');
+        document.getElementById('view-crm').classList.add('hidden');
+        document.getElementById('view-auth').classList.add('hidden');
+
+        if (viewName === 'dashboard') {
+            document.getElementById('view-dashboard').classList.remove('hidden');
+        } else if (viewName === 'crm') {
+            if (isLoggedIn) {
+                document.getElementById('view-crm').classList.remove('hidden');
+                loadUserCrmData(); // Load the specific user's data
+                renderCRM();
+            } else {
+                // Redirect to auth (login) if not authenticated
+                document.getElementById('view-auth').classList.remove('hidden');
+                showLogin();
+            }
+        }
+    }
+
+    // --- AUTH LOGIC ---
+
+    function showLogin(event) {
+        if (event) event.preventDefault();
+        document.getElementById('signupCard').classList.add('hidden');
+        document.getElementById('loginCard').classList.remove('hidden');
+        document.getElementById('loginError').classList.add('hidden');
+        document.getElementById('loginUser').value = '';
+        document.getElementById('loginPass').value = '';
+    }
+
+    function showSignUp(event) {
+        if (event) event.preventDefault();
+        document.getElementById('loginCard').classList.add('hidden');
+        document.getElementById('signupCard').classList.remove('hidden');
+        document.getElementById('signupError').classList.add('hidden');
+        document.getElementById('signupUser').value = '';
+        document.getElementById('signupPass').value = '';
+        document.getElementById('signupConfirmPass').value = '';
+    }
+
+    function attemptLogin() {
+        const user = document.getElementById('loginUser').value.trim();
+        const pass = document.getElementById('loginPass').value;
+        const errorMsg = document.getElementById('loginError');
+        
+        const foundUser = userList.find(u => u.username === user && u.password === pass);
+
+        if (foundUser) {
+            isLoggedIn = true;
+            currentUsername = user; // Set the current user
+            errorMsg.classList.add('hidden');
+            switchView('crm');
+        } else {
+            errorMsg.textContent = "Invalid username or password.";
+            errorMsg.classList.remove('hidden');
+            const card = document.getElementById('loginCard');
+            card.classList.add('animate-pulse');
+            setTimeout(() => card.classList.remove('animate-pulse'), 500);
+        }
+    }
+
+    function attemptSignUp() {
+        const user = document.getElementById('signupUser').value.trim();
+        const pass = document.getElementById('signupPass').value;
+        const confirmPass = document.getElementById('signupConfirmPass').value;
+        const errorMsg = document.getElementById('signupError');
+        errorMsg.classList.add('hidden');
+        
+        if (!user || !pass || !confirmPass) {
+            errorMsg.textContent = "All fields are required.";
+            errorMsg.classList.remove('hidden');
+            return;
+        }
+
+        // New Validation: Must be a @gmail.com email
+        const emailPattern = /@gmail\.com$/i;
+        if (!emailPattern.test(user)) {
+            errorMsg.textContent = "Username must be a valid @gmail.com address.";
+            errorMsg.classList.remove('hidden');
+            return;
+        }
+
+        if (pass.length < 6) {
+            errorMsg.textContent = "Password must be at least 6 characters long.";
+            errorMsg.classList.remove('hidden');
+            return;
+        }
+
+        if (pass !== confirmPass) {
+            errorMsg.textContent = "Passwords do not match.";
+            errorMsg.classList.remove('hidden');
+            return;
+        }
+
+        if (userList.some(u => u.username === user)) {
+            errorMsg.textContent = "Username already exists. Please choose another.";
+            errorMsg.classList.remove('hidden');
+            return;
+        }
+
+        // Add new user
+        userList.push({ username: user, password: pass });
+        setStorage('yt_crm_users', userList); // Save all users
+
+        // Auto-login new user
+        isLoggedIn = true;
+        currentUsername = user; // Set the current user
+        crmList = []; // Initialize empty CRM list for new user
+        saveCRM(); // Ensure the empty CRM is saved under the new user's key
+
+        // Show success message briefly (using the same error element)
+        errorMsg.textContent = `Account created for ${user}! Logging in...`;
+        errorMsg.classList.remove('text-red-600');
+        errorMsg.classList.add('text-green-600');
+        errorMsg.classList.remove('hidden');
+
+        setTimeout(() => {
+            errorMsg.classList.add('text-red-600');
+            errorMsg.classList.remove('text-green-600');
+            switchView('crm');
+        }, 1000);
+    }
+
+    function logout() {
+        isLoggedIn = false;
+        currentUsername = null; // Clear the user session
+        crmList = []; // Clear the current session data
+        switchView('dashboard');
+    }
+
+    // --- DASHBOARD LOGIC ---
+
+    async function analyzeChannel() {
+      const input = document.getElementById('channelInput').value.trim();
+      const errorBox = document.getElementById('errorBox');
+      const resultsBox = document.getElementById('results');
+      const channelList = document.getElementById('channelList');
+
+      // Reset UI
+      errorBox.classList.add('hidden');
+      resultsBox.classList.add('hidden');
+      channelList.classList.add('hidden');
+
+      if (!input) {
+        showError("Please enter a YouTube Channel ID, Handle, or URL.");
+        return;
+      }
+
+      try {
+        // Step 1: Resolve Input
+        const resolved = await resolveChannelInput(input);
+
+        if (resolved.type === 'direct') {
+            await loadChannel(resolved.id);
+        } else if (resolved.type === 'search' && resolved.items.length > 0) {
+            renderChannelList(resolved.items);
+        } else {
+            throw new Error("No channels found. Try a specific Channel ID or Check Spelling.");
+        }
+      } catch (err) {
+        console.error(err);
+        showError(err.message || "Failed to fetch channel data.");
+      }
+    }
+
+    async function loadChannel(channelId) {
+        document.getElementById('channelList').classList.add('hidden');
+        try {
+            const details = await fetchChannelDetails(channelId);
+            currentChannelData = details; // Save for CRM
+            renderData(details);
+            
+            // If logged in, automatically add to CRM upon analysis
+            if (isLoggedIn) {
+                autoAddToCRM(details);
+            }
+
+        } catch (err) {
+            showError("Could not load channel details.");
+        }
+    }
+
+    async function resolveChannelInput(input) {
+      const channelsUrl = `https://www.googleapis.com/youtube/v3/channels?part=id,snippet&key=${apiKey}`;
+      
+      if (input.includes('youtube.com') || input.includes('youtu.be')) {
+        const idMatch = input.match(/\/channel\/(UC[\w-]{22})/);
+        if (idMatch) return { type: 'direct', id: idMatch[1] };
+        const handleMatch = input.match(/@[\w\d_.-]+/);
+        if (handleMatch) input = handleMatch[0]; 
+        const userMatch = input.match(/\/user\/([\w\d_.-]+)/);
+        if (userMatch) {
+             try {
+                 const res = await fetch(`${channelsUrl}&forUsername=${encodeURIComponent(userMatch[1])}`);
+                 const data = await res.json();
+                 if (data.items?.length) return { type: 'direct', id: data.items[0].id };
+             } catch(e) {} 
+        }
+      }
+      if (input.startsWith('UC') && input.length === 24) return { type: 'direct', id: input };
+      if (input.startsWith('@')) {
+        try {
+            const res = await fetch(`${channelsUrl}&forHandle=${encodeURIComponent(input)}`);
+            const data = await res.json();
+            if (data.items?.length) return { type: 'direct', id: data.items[0].id };
+        } catch (e) {}
+      }
+
+      // Search Fallback
+      const searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=channel&maxResults=5&q=${encodeURIComponent(input)}&key=${apiKey}`;
+      const searchRes = await fetch(searchUrl);
+      const searchData = await searchRes.json();
+      if (searchData.items) return { type: 'search', items: searchData.items };
+
+      return { type: 'none' };
+    }
+
+    function renderChannelList(items) {
+        const container = document.getElementById('channelListContainer');
+        container.innerHTML = '';
+        items.forEach(item => {
+            const id = item.id.channelId;
+            const snippet = item.snippet;
+            const div = document.createElement('div');
+            div.className = "channel-card bg-white p-4 rounded-xl border border-gray-200 cursor-pointer transition flex items-center gap-4";
+            div.onclick = () => loadChannel(id);
+            div.innerHTML = `
+                <img src="${snippet.thumbnails.default.url}" onerror="this.onerror=null;this.src='https://placehold.co/48x48/d1d5db/4b5563?text=YT'" class="w-12 h-12 rounded-full object-cover bg-gray-100">
+                <div class="overflow-hidden">
+                    <h4 class="font-bold text-gray-900 truncate">${snippet.channelTitle || snippet.title}</h4>
+                    <p class="text-xs text-gray-500 truncate">${snippet.description || 'No description available'}</p>
+                </div>
+                <i class="fa-solid fa-chevron-right ml-auto text-gray-300"></i>
+            `;
+            container.appendChild(div);
+        });
+        document.getElementById('channelList').classList.remove('hidden');
+    }
+
+    async function fetchChannelDetails(channelId) {
+      const url = `https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics,brandingSettings&id=${channelId}&key=${apiKey}`;
+      const response = await fetch(url);
+      if (!response.ok) throw new Error("API Error");
+      const data = await response.json();
+      if (!data.items || !data.items.length) throw new Error("Channel not found.");
+      return data.items[0];
+    }
+
+    function calculateMockScores(channelId) {
+        const seed = channelId.charCodeAt(0) + channelId.charCodeAt(channelId.length - 1);
+        return {
+            seoScore: Math.min(98, 60 + (seed % 40)),
+            titleScore: Math.min(100, 70 + (seed % 30)),
+            engScore: Math.min(100, 50 + (seed % 50)),
+            tagScore: Math.min(100, 65 + (seed % 35)),
+            descScore: Math.min(100, 80 + (seed % 20))
+        };
+    }
+
+    function renderData(item) {
+      const stats = item.statistics;
+      const snippet = item.snippet;
+      
+      document.getElementById('profileImg').src = snippet.thumbnails.medium.url;
+      document.getElementById('profileImg').onerror = function() { this.onerror=null; this.src='https://placehold.co/96x96/d1d5db/4b5563?text=YT'; };
+
+      document.getElementById('profileName').textContent = snippet.title;
+      document.getElementById('profileId').textContent = item.id;
+      document.getElementById('subsCount').textContent = formatNumber(stats.subscriberCount);
+      document.getElementById('viewCount').textContent = formatNumber(stats.viewCount);
+      document.getElementById('videoCount').textContent = formatNumber(stats.videoCount);
+
+      const scores = calculateMockScores(item.id);
+      currentSeoScore = scores.seoScore; // Store SEO score for CRM saving
+
+      animateValue("seoScoreDisplay", 0, scores.seoScore, 1000, "%");
+      animateValue("engScore", 0, scores.engScore, 1000, "%");
+      animateValue("titleScore", 0, scores.titleScore, 1000, "%");
+      animateValue("tagScore", 0, scores.tagScore, 1000, "%");
+      animateValue("descScore", 0, scores.descScore, 1000, "%");
+
+      document.getElementById('engBar').style.width = `${scores.engScore}%`;
+      document.getElementById('titleBar').style.width = `${scores.titleScore}%`;
+      document.getElementById('tagBar').style.width = `${scores.tagScore}%`;
+      document.getElementById('descBar').style.width = `${scores.descScore}%`;
+
+      document.getElementById('results').classList.remove('hidden');
+    }
+
+    // --- CRM LOGIC ---
+
+    function autoAddToCRM(channelData) {
+        if (!currentUsername || !channelData) return;
+        
+        loadUserCrmData(); // Ensure we have the latest list for the current user
+
+        const exists = crmList.some(c => c.id === channelData.id);
+
+        if (!exists) {
+            // Add new entry
+            const newEntry = {
+                id: channelData.id,
+                title: channelData.snippet.title,
+                thumbnail: channelData.snippet.thumbnails.default.url,
+                subs: parseInt(channelData.statistics.subscriberCount, 10), // Store as number
+                seoScore: currentSeoScore, // Use the calculated score
+                status: 'lead', // Default status
+                email: '',
+                notes: '',
+                dateAdded: new Date().toISOString()
+            };
+            crmList.push(newEntry);
+            saveCRM();
+        }
+    }
+
+    function calculateCRMAnalytics() {
+        let totalSubs = 0;
+        let totalSeoScore = 0;
+        let contactedCount = 0;
+        
+        crmList.forEach(contact => {
+            totalSubs += contact.subs || 0; // Sum up subscribers (ensure 'subs' is a number)
+            totalSeoScore += contact.seoScore || 0; // Sum up SEO scores
+            if (contact.status === 'contacted' || contact.status === 'negotiating' || contact.status === 'partner') {
+                contactedCount++;
+            }
+        });
+
+        const totalChannels = crmList.length;
+        const avgSeo = totalChannels > 0 ? (totalSeoScore / totalChannels).toFixed(1) : 0;
+
+        return {
+            totalChannels: totalChannels,
+            totalSubs: totalSubs,
+            avgSeo: parseFloat(avgSeo),
+            contactedCount: contactedCount
+        };
+    }
+
+    function renderCRMAnalytics(analytics) {
+        document.getElementById('statTotalChannels').textContent = analytics.totalChannels;
+        document.getElementById('statTotalSubs').textContent = formatNumber(analytics.totalSubs);
+        document.getElementById('statAvgSeo').textContent = `${analytics.avgSeo}%`;
+        document.getElementById('statContacted').textContent = analytics.contactedCount;
+    }
+
+    function renderCRM() {
+        const tbody = document.getElementById('crmTableBody');
+        const emptyState = document.getElementById('crmEmptyState');
+        
+        // 1. Calculate and Render Analytics
+        const analytics = calculateCRMAnalytics();
+        renderCRMAnalytics(analytics);
+        
+        // 2. Render Table
+        tbody.innerHTML = '';
+
+        if (crmList.length === 0) {
+            emptyState.classList.remove('hidden');
+            return;
+        } else {
+            emptyState.classList.add('hidden');
+        }
+
+        crmList.forEach(contact => {
+            const tr = document.createElement('tr');
+            
+            // Status Color Logic
+            let statusColor = 'gray';
+            if (contact.status === 'contacted') statusColor = 'blue';
+            if (contact.status === 'negotiating') statusColor = 'yellow';
+            if (contact.status === 'partner') statusColor = 'green';
+            let statusLabel = contact.status.charAt(0).toUpperCase() + contact.status.slice(1);
+            
+            tr.innerHTML = `
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0 h-10 w-10">
+                            <img class="h-10 w-10 rounded-full object-cover" src="${contact.thumbnail}" alt="" onerror="this.onerror=null;this.src='https://placehold.co/40x40/d1d5db/4b5563?text=YT'">
+                        </div>
+                        <div class="ml-4">
+                            <div class="text-sm font-medium text-gray-900">${contact.title}</div>
+                            <div class="text-xs text-gray-500">Score: ${contact.seoScore}% | Added: ${new Date(contact.dateAdded).toLocaleDateString()}</div>
+                        </div>
+                    </div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="text-sm text-gray-900 font-bold">${formatNumber(contact.subs)}</div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-${statusColor}-100 text-${statusColor}-800">
+                        <select onchange="updateCRM('${contact.id}', 'status', this.value)" class="bg-transparent border-none focus:ring-0 p-0 text-xs font-semibold cursor-pointer">
+                            <option value="lead" ${contact.status === 'lead' ? 'selected' : ''}>Lead</option>
+                            <option value="contacted" ${contact.status === 'contacted' ? 'selected' : ''}>Contacted</option>
+                            <option value="negotiating" ${contact.status === 'negotiating' ? 'selected' : ''}>Negotiating</option>
+                            <option value="partner" ${contact.status === 'partner' ? 'selected' : ''}>Partner</option>
+                        </select>
+                    </span>
+                </td>
+                <td class="px-6 py-4">
+                    <div class="flex flex-col gap-2">
+                        <input type="email" placeholder="Email..." value="${contact.email || ''}" 
+                            onchange="updateCRM('${contact.id}', 'email', this.value)"
+                            class="text-xs border-gray-200 rounded p-1 w-full focus:ring-red-500 focus:border-red-500">
+                        <input type="text" placeholder="Add note..." value="${contact.notes || ''}" 
+                            onchange="updateCRM('${contact.id}', 'notes', this.value)"
+                            class="text-xs border-gray-200 rounded p-1 w-full focus:ring-red-500 focus:border-red-500">
+                    </div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <button onclick="deleteFromCRM('${contact.id}')" class="text-red-600 hover:text-red-900">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function updateCRM(id, field, value) {
+        const idx = crmList.findIndex(c => c.id === id);
+        if (idx !== -1) {
+            crmList[idx][field] = value;
+            saveCRM(); 
+            // Re-render both the table and analytics
+            renderCRM(); 
+        }
+    }
+
+    function deleteFromCRM(id) {
+        deleteTargetId = id;
+        document.getElementById('deleteModal').classList.remove('hidden');
+    }
+
+    function closeDeleteModal() {
+        document.getElementById('deleteModal').classList.add('hidden');
+        deleteTargetId = null;
+    }
+
+    function executeDelete() {
+        if (deleteTargetId) {
+            crmList = crmList.filter(c => c.id !== deleteTargetId);
+            saveCRM(); 
+            renderCRM();
+            closeDeleteModal();
+        }
+    }
+
+    function exportCRM() {
+        if(crmList.length === 0) { 
+            showError("Your CRM is empty! Nothing to export.");
+            return; 
+        }
+        let csv = 'Channel,Subscribers,SEO_Score,Status,Email,Notes\n';
+        crmList.forEach(c => {
+            const sanitizedTitle = `"${c.title.replace(/"/g, '""')}"`;
+            const sanitizedEmail = `"${c.email.replace(/"/g, '""')}"`;
+            const sanitizedNotes = `"${c.notes.replace(/"/g, '""')}"`;
+
+            csv += `${sanitizedTitle},${formatLargeNumber(c.subs)},${c.seoScore}%,${c.status},${sanitizedEmail},${sanitizedNotes}\n`;
+        });
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.setAttribute('hidden', '');
+        a.setAttribute('href', url);
+        a.setAttribute('download', 'influencer_crm_analytics.csv');
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    }
+
+    function showError(msg) {
+      document.getElementById('errorMessage').textContent = msg;
+      document.getElementById('errorBox').classList.remove('hidden');
+    }
+
+    function animateValue(id, start, end, duration, suffix = "") {
+      const obj = document.getElementById(id);
+      let startTimestamp = null;
+      const step = (timestamp) => {
+        if (!startTimestamp) startTimestamp = timestamp;
+        const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+        obj.innerHTML = Math.floor(progress * (end - start) + start) + suffix;
+        if (progress < 1) {
+          window.requestAnimationFrame(step);
+        }
+      };
+      window.requestAnimationFrame(step);
+    }
+
+    // Initial view load
+    document.addEventListener('DOMContentLoaded', () => {
+        // Initialize the default user to ensure it uses the required format if it exists.
+        const defaultUserExists = userList.some(u => u.username === "admin");
+        if (defaultUserExists) {
+             userList = userList.map(u => u.username === "admin" ? { username: "admin@gmail.com", password: u.password } : u);
+             setStorage('yt_crm_users', userList);
+        }
+
+        switchView('dashboard');
+    });
+
+  </script>
+</body>
+</html>
